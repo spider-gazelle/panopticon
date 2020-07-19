@@ -28,6 +28,21 @@ describe Panopticon do
     end
   end
 
+  describe "id?" do
+    it "returns `nil` if an ID does not exist" do
+      in_fiber do
+        Panopticon.id?.should be_nil
+      end
+    end
+
+    it "returns the ID" do
+      in_fiber do
+        id = Panopticon.id
+        Panopticon.id?.should eq(id)
+      end
+    end
+  end
+
   describe ".inject" do
     it "does not pollute sibling fibers" do
       id = Panopticon.generate_id

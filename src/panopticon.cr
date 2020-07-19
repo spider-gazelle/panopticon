@@ -31,7 +31,12 @@ module Panopticon
 
   # Provide an ID for the current execution context.
   def self.id : ID
-    extract(Fiber.current) || self.id=(generate_id)
+    id? || self.id=(generate_id)
+  end
+
+  # Provides the current correlation ID, or `nil` if tracking is not active.
+  def self.id? : ID?
+    extract Fiber.current
   end
 
   # Sets the ID for the current execution context.

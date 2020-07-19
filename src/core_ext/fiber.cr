@@ -3,6 +3,6 @@ require "fiber"
 class Fiber
   def initialize(name : String? = nil, &proc : ->)
     previous_def name, &proc
-    Panopticon.replicate self
+    Panopticon.propagate self
   end
 end

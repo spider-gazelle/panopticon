@@ -44,7 +44,7 @@ module Panopticon
     inject id, Fiber.current
   end
 
-  # Injects a correlation ID into *fiber*.
+  # Injects *id* into *fiber*.
   #
   # Once injected the ID will continue to be passed to downstream fibers as they
   # are created as well as applied to all outgoing HTTP requests these make.
@@ -54,14 +54,23 @@ module Panopticon
     id
   end
 
-  # Use the supplied *context* to extract any existing ID and propagate to
-  # downstream contexts.
+  # Injects *id* into *request*.
+  def self.inject(id : ID, request : HTTP::Request) : ID
+    request.headers ||= HTTP::Headers.new
+    request.headers[HTTPHeader] = id
+    id
+  end
+
+  # Receives and upstream ID and applies it to the current execution context.
+  #
+  # If an ID does not exist on the received request, a new one is created.
   def self.attach(context : HTTP::Server::Context) : ID
     self.id = extract(context.request) || generate_id
   end
 
-  # Copies the ID linked with *from* to *to*.
-  def self.replicate(to : Fiber, from = Fiber.current) : ID?
+  # Copies the ID from an existing execution context to a new `Fiber` or
+  # outgoing `HTTP::Request`.
+  def self.propagate(to : Fiber | HTTP::Request, from = Fiber.current) : ID?
     extract(from).try do |id|
       inject id, to
     end

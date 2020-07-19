@@ -11,7 +11,7 @@ module Panopticon
   # Key used for storing correlation IDs within a `Log::Context`.
   LogKey = :correlation_id
 
-  private alias ID = String
+  alias ID = String
 
   # Generates a new correlation ID.
   def self.generate_id : ID

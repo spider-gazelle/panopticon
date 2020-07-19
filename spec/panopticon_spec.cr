@@ -10,43 +10,53 @@ describe Panopticon do
     end
   end
 
-  it "inserts and extracts from a fiber context" do
-    id = Panopticon.generate_id
-    in_fiber do
-      Panopticon.inject id
-      Panopticon.extract.should eq(id)
+  describe ".id, id=" do
+    it "inserts and extracts from a fiber context" do
+      id = Panopticon.generate_id
+      in_fiber do
+        Panopticon.id = id
+        Panopticon.id.should eq(id)
+      end
+    end
+
+    it "persists an ID once created" do
+      in_fiber do
+        id1 = Panopticon.id
+        id2 = Panopticon.id
+        id1.should eq(id2)
+      end
     end
   end
 
   describe ".inject" do
     it "does not pollute sibling fibers" do
       id = Panopticon.generate_id
-      in_fiber { Panopticon.inject id }
-      in_fiber { Panopticon.extract.should be_nil }
+      in_fiber { Panopticon.inject id, Fiber.current }
+      in_fiber { Panopticon.extract(Fiber.current).should be_nil }
     end
 
     it "does not pollute parent fibers" do
       id = Panopticon.generate_id
       in_fiber do
-        in_fiber { Panopticon.inject id }
-        Panopticon.extract.should be_nil
+        in_fiber { Panopticon.inject id, Fiber.current }
+        Panopticon.extract(Fiber.current).should be_nil
       end
     end
 
     it "propogates to child fibers" do
       id = Panopticon.generate_id
       in_fiber do
-        Panopticon.inject id
-        in_fiber { Panopticon.extract.should eq(id) }
+        Panopticon.inject id, Fiber.current
+        in_fiber { Panopticon.id.should eq(id) }
       end
     end
 
     it "persists the ID when when logging context is cleared" do
       id = Panopticon.generate_id
       in_fiber do
-        Panopticon.inject id
+        Panopticon.inject id, Fiber.current
         ::Log.context.clear
-        Panopticon.extract.should eq(id)
+        Panopticon.id.should eq(id)
       end
     end
   end
@@ -55,7 +65,7 @@ describe Panopticon do
     it "copies an ID between fibers" do
       id = Panopticon.generate_id
       ch = Channel(Nil).new
-      fib1 = spawn { Panopticon.inject id; ch.receive }
+      fib1 = spawn { Panopticon.id = id; ch.receive }
       fib2 = spawn { ch.receive }
       Fiber.yield
       Panopticon.extract(fib1).should eq(id)

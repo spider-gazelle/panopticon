@@ -25,28 +25,38 @@ module Panopticon
   end
 
   # Extracts a correlation ID from *fiber*.
-  def self.extract(fiber = Fiber.current) : ID?
+  def self.extract(fiber : Fiber) : ID?
     fiber.logging_context[LogKey]?.try &.as_s
+  end
+
+  # Provide an ID for the current execution context.
+  def self.id : ID
+    extract(Fiber.current) || self.id=(generate_id)
+  end
+
+  # Sets the ID for the current execution context.
+  def self.id=(id : ID) : ID
+    inject id, Fiber.current
   end
 
   # Injects a correlation ID into *fiber*.
   #
   # Once injected the ID will continue to be passed to downstream fibers as they
   # are created as well as applied to all outgoing HTTP requests these make.
-  def self.inject(id : ID, fiber = Fiber.current) : Nil
+  def self.inject(id : ID, fiber : Fiber) : ID
     context = fiber.logging_context
     fiber.logging_context = context.extend({{ "{#{LogKey.id}: id.to_s}".id }})
+    id
   end
 
   # Use the supplied *context* to extract any existing ID and propagate to
   # downstream contexts.
-  def self.attach(context : HTTP::Server::Context) : Nil
-    id = extract(request) || generate_id
-    inject id
+  def self.attach(context : HTTP::Server::Context) : ID
+    self.id = extract(context.request) || generate_id
   end
 
   # Copies the ID linked with *from* to *to*.
-  def self.replicate(to : Fiber, from = Fiber.current) : Nil
+  def self.replicate(to : Fiber, from = Fiber.current) : ID?
     extract(from).try do |id|
       inject id, to
     end

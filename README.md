@@ -1,10 +1,15 @@
-# panopticon
+# Panopticon
 
-Panopticon is a small tool to assist in tracing transactions through distributed systems.
+_Panopticon_ is a small tool to assist in tracing transactions through distributed systems.
 
-It creates or extracts a `X-Correlation-Id` header and applies this to any outgoing HTTP requests made from the same Fiber, or a child Fibers.
-Correlation ID are also available as part of the current fiber's logging context.
-This is also replicated to any new fibers to maintain references across asyncronous tasks associated with the original event.
+It associates correlation IDs with fibers and handles propagation of these across service boundaries.
+Newly created fibers also inherit correlation IDs, allowing tracing across asyncrounous and concurrent tasks.
+This enables tracing of transactions throughout the entire system.
+
+When a service receives a request the correlation ID is extracted.
+If one does not exist a new ID is generated.
+All execution contexts that spawn from this request are tagged with this ID, and in turn distribute to downstream services.
+These are available externally via the `X-Correlation-ID` HTTP header and `correlation_id` in the `Log::Context`.
 
 ## Usage
 
@@ -12,7 +17,7 @@ This is also replicated to any new fibers to maintain references across asyncron
 require "panopticon"
 ```
 
-That's it!
+That's it.
 
 ## Contributing
 

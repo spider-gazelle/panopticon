@@ -1,9 +1,8 @@
 name: panopticon
-version: 0.1.0
+version: 0.1.1
+crystal: ">= 0.35.1"
 
 authors:
   - Kim Burgess <kim@place.technology>
-
-crystal: 0.35.1
 
 license: MIT
